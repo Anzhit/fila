@@ -5,7 +5,7 @@ import math
 import sys
 from thread import *
 import ast
-
+import numpy as np
 import argparse
 
 
@@ -34,7 +34,7 @@ host = '127.0.0.1'
 port = args.PORT
 
 #holes =[(22.21,22.21),(22.21,800-22.21),(800-22.21,22.21),(800-22.21,800-22.21)]
-holes =[(0,0),(0,800),(800,0),(800,800)]
+holes =[(44.1, 44.1), (755.9, 44.1), (755.9, 755.9), (44.1, 755.9)]
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((host, port))
 def parse_state_message(msg):
@@ -65,14 +65,44 @@ def find_nearest_hole(coin) :
     maxi_index = 0
     maxi_dist = 0
     distance = 0
+    holes1=[]
+    # for hole in holes:
+    # 	m=(coin[1]-hole[1])/(coin[0]-hole[0])
+    # 	c=coin[1]-m*coin[0]
+    # 	x=(145-c)/m
+    # 	if(170<x and x<630):
+    # 		holes1.append(hole)
+    # if(len(holes1)>0):
+	   #  for j in range(0,len(holes1)):
+	   #      distance = dist(holes1[j],coin)
+	   #      if distance > maxi_dist :
+	   #          maxi_dist = distance
+	   #          maxi_index = j
+	   #  return holes1[maxi_index]
     for j in range(0,len(holes)):
         distance = dist(holes[j],coin)
         if distance > maxi_dist :
             maxi_dist = distance
             maxi_index = j
-    return holes[maxi_index],math.sqrt(maxi_dist)
+    return holes[maxi_index]
 
-
+def vectorize_state(state):
+	ans=np.zeros((38))
+	i=0
+	for x in state["White_Locations"]:
+		ans[i]=x[0]
+		ans[i+1]=x[1]
+		i+=2
+	i=18	
+	for x in state["Black_Locations"]:
+		ans[i]=x[0]
+		ans[i+1]=x[1]
+		i+=2
+	i=36
+	for x in state["Red_Location"]:
+		ans[i]=x[0]
+		ans[i+1]=x[1]
+	return ans
 def get_most_suitable_x(list_of_x,coin_list,to_hit, angle_to_hole) :
     max_max_travelable_dist = 0
     random.shuffle(list_of_x)
@@ -80,8 +110,8 @@ def get_most_suitable_x(list_of_x,coin_list,to_hit, angle_to_hole) :
     
     # y = 145
     # x=to_hit[0] + (y-to_hit[1])*math.tan(angle_to_hole)
-    # x = max(min(630,x),170)
-    # return x,dist(to_hit,(x,y))
+    # if(x<630 and x>170):
+    # 	return x,dist(to_hit,(x,y))
 
     for i in range (0,len(list_of_x)) :
         unobstructed_distance = (to_hit[0] - list_of_x[i])*(to_hit[0] - list_of_x[i]) + (to_hit[1] - 145)*(to_hit[1] - 145)
@@ -113,8 +143,7 @@ while 1:
             print r
         except:
             print "Something went wrong",tm
-
-            
+   
         if  len(S["White_Locations"])!=0 or len(S["Black_Locations"])!=0 or len(S["Red_Location"])!=0:
             to_hit_list=S["Black_Locations"]+S["Red_Location"] + S["White_Locations"]
             if len(to_hit_list) == 2 and len(S["Red_Location"])!=0 :
@@ -124,10 +153,9 @@ while 1:
                     to_hit = to_hit_list[get_coin_max_sep(to_hit_list)]
                 except:
                     to_hit = (400,400)
-            hole,dist1 = find_nearest_hole(to_hit)
+            hole = find_nearest_hole(to_hit)
             angle_to_hole = math.atan2((to_hit[1]-hole[1]),(to_hit[0]-hole[0]))
-            point_to_aim = ((to_hit[0]) - 20.6*math.cos(angle_to_hole),(to_hit[1]) - 20.6*math.sin(angle_to_hole))
-            list_of_x = [170,190,210,230,250,270,290,310,330,350,370,390,410,430,450,470,490,510,530,550,570,590,610,630]
+            list_of_x = range(170,640,10)
             x,dist2 = get_most_suitable_x(list_of_x,to_hit_list,to_hit, angle_to_hole)
             loc = (x,145)
             angle=math.atan2((to_hit[1]-loc[1]),(to_hit[0]-loc[0]))
@@ -137,7 +165,7 @@ while 1:
             if angle>=315 and angle<=360:
                 angle=angle-360
             
-            a=a=str(float(x-170)/float(460))+','+str(angle)+ ','+str(0.5)
+            a=a=str(float(x-170)/float(460))+','+str(angle)+ ','+str(0.8)
                 #a=str(angle)+ ',' + str(float(x-170)/float(460))+','+str(random.random()/1.25) # Remove in actual test
                 #a=str(angle)+ ',' + str(float(x-170)/float(460))+','+str(0.5*dist2/800) # Remove in actual test
         else:
