@@ -7,7 +7,7 @@ from thread import *
 import ast
 import numpy as np
 import argparse
-
+import random
 
 
 parser = argparse.ArgumentParser()
@@ -46,11 +46,11 @@ def parse_state_message(msg):
 
 def get_coin_max_sep(coin_list) :
     maxi_index = 0
-    maxi_dist = 0
+    maxi_dist = 100000
     dist = 0
     for i in range(0,len(coin_list)) :
         dist = get_dist(coin_list,i)
-        if dist > maxi_dist :
+        if dist < maxi_dist :
             maxi_dist = dist
             maxi_index = i
     return maxi_index
@@ -59,26 +59,27 @@ def get_dist(coin_list, index) :
     distance = 0;
     for j in range(0,len(coin_list)):
         distance = distance + dist(coin_list[j],coin_list[index])
-        return dist
+    return distance
 
 def find_nearest_hole(coin) :
     maxi_index = 0
     maxi_dist = 0
     distance = 0
     holes1=[]
-    # for hole in holes:
-    # 	m=(coin[1]-hole[1])/(coin[0]-hole[0])
-    # 	c=coin[1]-m*coin[0]
-    # 	x=(145-c)/m
-    # 	if(170<x and x<630):
-    # 		holes1.append(hole)
-    # if(len(holes1)>0):
-	   #  for j in range(0,len(holes1)):
-	   #      distance = dist(holes1[j],coin)
-	   #      if distance > maxi_dist :
-	   #          maxi_dist = distance
-	   #          maxi_index = j
-	   #  return holes1[maxi_index]
+    for hole in holes:
+    	m=(coin[1]-hole[1])/(coin[0]-hole[0])
+    	c=coin[1]-m*coin[0]
+    	x=(145-c)/m
+    	# del=math.asin(POCKET_RADIUS,dist(hole,coin))/3.14*180
+    	if(170<x and x<630):
+    		holes1.append(hole)
+    if(len(holes1)>0):
+	    for j in range(0,len(holes1)):
+	        distance = dist(holes1[j],coin)
+	        if distance > maxi_dist :
+	            maxi_dist = distance
+	            maxi_index = j
+	    return holes1[maxi_index]
     for j in range(0,len(holes)):
         distance = dist(holes[j],coin)
         if distance > maxi_dist :
@@ -108,10 +109,10 @@ def get_most_suitable_x(list_of_x,coin_list,to_hit, angle_to_hole) :
     random.shuffle(list_of_x)
     index = 0
     
-    # y = 145
-    # x=to_hit[0] + (y-to_hit[1])*math.tan(angle_to_hole)
-    # if(x<630 and x>170):
-    # 	return x,dist(to_hit,(x,y))
+    y = 145
+    x=to_hit[0] + (y-to_hit[1])*math.tan(angle_to_hole)
+    if(x<630 and x>170):
+    	return x,dist(to_hit,(x,y))
 
     for i in range (0,len(list_of_x)) :
         unobstructed_distance = (to_hit[0] - list_of_x[i])*(to_hit[0] - list_of_x[i]) + (to_hit[1] - 145)*(to_hit[1] - 145)
@@ -134,7 +135,7 @@ def get_most_suitable_x(list_of_x,coin_list,to_hit, angle_to_hole) :
     return list_of_x[index], max_max_travelable_dist
 
 
-
+first=True
 #170:630
 while 1:
         tm = s.recv(1024)
@@ -154,6 +155,7 @@ while 1:
                 except:
                     to_hit = (400,400)
             hole = find_nearest_hole(to_hit)
+
             angle_to_hole = math.atan2((to_hit[1]-hole[1]),(to_hit[0]-hole[0]))
             list_of_x = range(170,640,10)
             x,dist2 = get_most_suitable_x(list_of_x,to_hit_list,to_hit, angle_to_hole)
@@ -164,8 +166,11 @@ while 1:
             angle=angle/3.14*180
             if angle>=315 and angle<=360:
                 angle=angle-360
-            
+
             a=a=str(float(x-170)/float(460))+','+str(angle)+ ','+str(0.8)
+    #         if(first):
+				# a=a=str(1)+','+str(math.atan2((S["Red_Location"][0][1]-145),(S["Red_Location"][0][0]-630))/3.14*180)+ ','+str(0.6)
+				# first=False
                 #a=str(angle)+ ',' + str(float(x-170)/float(460))+','+str(random.random()/1.25) # Remove in actual test
                 #a=str(angle)+ ',' + str(float(x-170)/float(460))+','+str(0.5*dist2/800) # Remove in actual test
         else:
