@@ -35,8 +35,7 @@ port = args.PORT
 
 #holes =[(22.21,22.21),(22.21,800-22.21),(800-22.21,22.21),(800-22.21,800-22.21)]
 holes =[(44.1, 44.1), (755.9, 44.1), (755.9, 755.9), (44.1, 755.9)]
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((host, port))
+
 def parse_state_message(msg):
     s = msg.split(";REWARD")
     s[0] = s[0].replace("Vec2d", "")
@@ -109,10 +108,10 @@ def get_most_suitable_x(list_of_x,coin_list,to_hit, angle_to_hole) :
     random.shuffle(list_of_x)
     index = 0
     
-    y = 145
-    x=to_hit[0] + (y-to_hit[1])*math.tan(angle_to_hole)
-    if(x<630 and x>170):
-    	return x,dist(to_hit,(x,y))
+    # y = 145
+    # x=to_hit[0] + (y-to_hit[1])*math.tan(angle_to_hole)
+    # if(x<630 and x>170):
+    # 	return x,dist(to_hit,(x,y))
 
     for i in range (0,len(list_of_x)) :
         unobstructed_distance = (to_hit[0] - list_of_x[i])*(to_hit[0] - list_of_x[i]) + (to_hit[1] - 145)*(to_hit[1] - 145)
@@ -134,52 +133,84 @@ def get_most_suitable_x(list_of_x,coin_list,to_hit, angle_to_hole) :
             index = i
     return list_of_x[index], max_max_travelable_dist
 
-
-first=True
-#170:630
-while 1:
-        tm = s.recv(1024)
+def play(S):
+    if  len(S["White_Locations"])!=0 or len(S["Black_Locations"])!=0 or len(S["Red_Location"])!=0:
+    	to_hit_list=S["Black_Locations"]+S["Red_Location"] + S["White_Locations"]
+    if len(to_hit_list) == 2 and len(S["Red_Location"])!=0 :
+        to_hit = S["Red_Location"][0]
+    else :
         try:
-            S,r=parse_state_message(tm)
-            print r
+            to_hit = to_hit_list[get_coin_max_sep(to_hit_list)]
         except:
-            print "Something went wrong",tm
-   
-        if  len(S["White_Locations"])!=0 or len(S["Black_Locations"])!=0 or len(S["Red_Location"])!=0:
-            to_hit_list=S["Black_Locations"]+S["Red_Location"] + S["White_Locations"]
-            if len(to_hit_list) == 2 and len(S["Red_Location"])!=0 :
-                to_hit = S["Red_Location"][0]
-            else :
-                try:
-                    to_hit = to_hit_list[get_coin_max_sep(to_hit_list)]
-                except:
-                    to_hit = (400,400)
-            hole = find_nearest_hole(to_hit)
+            to_hit = (400,400)
+    hole = find_nearest_hole(to_hit)
 
-            angle_to_hole = math.atan2((to_hit[1]-hole[1]),(to_hit[0]-hole[0]))
-            list_of_x = range(170,640,10)
-            x,dist2 = get_most_suitable_x(list_of_x,to_hit_list,to_hit, angle_to_hole)
-            loc = (x,145)
-            angle=math.atan2((to_hit[1]-loc[1]),(to_hit[0]-loc[0]))
-            if angle < 0:
-                angle = angle + 2*3.14
-            angle=angle/3.14*180
-            if angle>=315 and angle<=360:
-                angle=angle-360
+    angle_to_hole = math.atan2((to_hit[1]-hole[1]),(to_hit[0]-hole[0]))
+    list_of_x = range(170,640,10)
+    x,dist2 = get_most_suitable_x(list_of_x,to_hit_list,to_hit, angle_to_hole)
+    loc = (x,145)
+    angle=math.atan2((to_hit[1]-loc[1]),(to_hit[0]-loc[0]))
+    if angle < 0:
+        angle = angle + 2*3.14
+    angle=angle/3.14*180
+    if angle>=315 and angle<=360:
+        angle=angle-360
 
-            a=a=str(float(x-170)/float(460))+','+str(angle)+ ','+str(0.8)
-    #         if(first):
+    return str(float(x-170)/float(460))+','+str(angle)+ ','+str(0.8)
+def myplay(S):
+	if  len(S["White_Locations"])!=0 or len(S["Black_Locations"])!=0 or len(S["Red_Location"])!=0:
+		to_hit_list=S["Black_Locations"]+S["Red_Location"] + S["White_Locations"]
+	if len(to_hit_list) == 2 and len(S["Red_Location"])!=0 :
+		to_hit = S["Red_Location"][0]
+	targets=[]
+	for coin in to_hit_list:
+		for hole in holes:
+			m=(coin[1]-hole[1])/(coin[0]-hole[0])
+			c=coin[1]-m*coin[0]
+			x=(145-c)/m
+			# del=math.asin(POCKET_RADIUS,dist(hole,coin))/3.14*180
+			if(170<x and x<630):
+				targets.append((coin,hole,x,(coin[1]-145)/(coin[0]-x)))
+	min_dist = 10000
+	idx=0			
+	for i in range(len(targets)):
+		if(min_dist>dist(targets[i][0],targets[i][1])):
+			min_dist=dist(targets[i][0],targets[i][1])
+			idx=i
+	if(targets!=[]):
+		angle=math.atan(targets[idx][3])/3.14*180
+		if angle < 0:
+			angle = angle + 360
+		if angle>=315 and angle<=360:
+			angle=angle-360
+		return str(float(targets[idx][2]-170)/float(460))+','+str(angle)+ ','+str(0.8)    
+	return None
+if __name__ == "__main__":
+	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	s.connect((host, port))
+	first=True
+	#170:630
+	while 1:
+	    tm = s.recv(1024)
+	    try:
+	        S,r=parse_state_message(tm)
+	    except:
+	        print "Something went wrong",tm
+			
+	    a=play(S)
+	    if(a==None):
+	    	a=play(S)
+	    	print "Default"
+	#         if(first):
 				# a=a=str(1)+','+str(math.atan2((S["Red_Location"][0][1]-145),(S["Red_Location"][0][0]-630))/3.14*180)+ ','+str(0.6)
 				# first=False
-                #a=str(angle)+ ',' + str(float(x-170)/float(460))+','+str(random.random()/1.25) # Remove in actual test
-                #a=str(angle)+ ',' + str(float(x-170)/float(460))+','+str(0.5*dist2/800) # Remove in actual test
-        else:
-            a=None
-        try:
-            #print a + ":::" + str(to_hit) + "+++" + str(loc)
-            s.send(a)
-        except:
-            print "Error in sending:",  a
-	    print "Closing Connection"
-	    break
-s.close()
+	            #a=str(angle)+ ',' + str(float(x-170)/float(460))+','+str(random.random()/1.25) # Remove in actual test
+	            #a=str(angle)+ ',' + str(float(x-170)/float(460))+','+str(0.5*dist2/800) # Remove in actual test
+	    try:
+	        #print a + ":::" + str(to_hit) + "+++" + str(loc)
+	        s.send(a)
+	    except:
+	        print "Error in sending:",  a
+	    	print "Closing Connection"
+	    	break
+	s.close()
