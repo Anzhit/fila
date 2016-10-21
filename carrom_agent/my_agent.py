@@ -32,7 +32,7 @@ args=parser.parse_args()
 
 host = '127.0.0.1'
 port = args.PORT
-
+random.seed(args.rng)
 #holes =[(22.21,22.21),(22.21,800-22.21),(800-22.21,22.21),(800-22.21,800-22.21)]
 holes =[(44.1, 44.1), (755.9, 44.1), (755.9, 755.9), (44.1, 755.9)]
 
@@ -108,10 +108,10 @@ def get_most_suitable_x(list_of_x,coin_list,to_hit, angle_to_hole) :
     random.shuffle(list_of_x)
     index = 0
     
-    # y = 145
-    # x=to_hit[0] + (y-to_hit[1])*math.tan(angle_to_hole)
-    # if(x<630 and x>170):
-    # 	return x,dist(to_hit,(x,y))
+    y = 145
+    x=to_hit[0] + (y-to_hit[1])*math.tan(angle_to_hole)
+    if(x<630 and x>170):
+    	return x,dist(to_hit,(x,y))
 
     for i in range (0,len(list_of_x)) :
         unobstructed_distance = (to_hit[0] - list_of_x[i])*(to_hit[0] - list_of_x[i]) + (to_hit[1] - 145)*(to_hit[1] - 145)
@@ -155,8 +155,7 @@ def play(S):
     angle=angle/3.14*180
     if angle>=315 and angle<=360:
         angle=angle-360
-
-    return str(float(x-170)/float(460))+','+str(angle)+ ','+str(0.8)
+    return str(float(x-170)/float(460))+','+str(angle)+ ','+str(0.6)
 def myplay(S):
 	if  len(S["White_Locations"])!=0 or len(S["Black_Locations"])!=0 or len(S["Red_Location"])!=0:
 		to_hit_list=S["Black_Locations"]+S["Red_Location"] + S["White_Locations"]
@@ -167,10 +166,23 @@ def myplay(S):
 		for hole in holes:
 			m=(coin[1]-hole[1])/(coin[0]-hole[0])
 			c=coin[1]-m*coin[0]
-			x=(145-c)/m
+			x=(145.0-c)/m
 			# del=math.asin(POCKET_RADIUS,dist(hole,coin))/3.14*180
-			if(170<x and x<630):
-				targets.append((coin,hole,x,(coin[1]-145)/(coin[0]-x)))
+			ang=math.atan2((coin[1]-145),(coin[0]-x))/3.14*180
+			if ang < 0:
+				ang = ang + 360
+			if ang>=315 and ang<=360:
+				ang=ang-360
+			if(170<x and x<630 and ang<=225 and ang>=-45 ):
+				#find # obstructions
+				obtr=0
+				for co in to_hit_list:
+					if(dist((x,145),co)<35):
+						obtr=10
+					if(abs(co[1]-m*co[0]-c)/sqrt(1+m*m) <25):
+						obtr+=1
+				if(obtr<=1):
+					targets.append((coin,hole,x,ang,obtr))
 	min_dist = 10000
 	idx=0			
 	for i in range(len(targets)):
@@ -178,12 +190,9 @@ def myplay(S):
 			min_dist=dist(targets[i][0],targets[i][1])
 			idx=i
 	if(targets!=[]):
-		angle=math.atan(targets[idx][3])/3.14*180
-		if angle < 0:
-			angle = angle + 360
-		if angle>=315 and angle<=360:
-			angle=angle-360
-		return str(float(targets[idx][2]-170)/float(460))+','+str(angle)+ ','+str(0.8)    
+		print targets[idx]
+		d=dist((targets[idx][2],145),targets[idx][0])+0.35*dist(targets[idx][0],targets[idx][1])
+		return str(float(targets[idx][2]-170)/float(460))+','+str(targets[idx][3])+ ','+str(0.3*(d/2800))    
 	return None
 if __name__ == "__main__":
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -201,8 +210,9 @@ if __name__ == "__main__":
 	    if(a==None):
 	    	a=play(S)
 	    	print "Default"
-	#         if(first):
-				# a=a=str(1)+','+str(math.atan2((S["Red_Location"][0][1]-145),(S["Red_Location"][0][0]-630))/3.14*180)+ ','+str(0.6)
+	    if(first):
+			a="1.0, 131.7829, 0.6"
+			first=False
 				# first=False
 	            #a=str(angle)+ ',' + str(float(x-170)/float(460))+','+str(random.random()/1.25) # Remove in actual test
 	            #a=str(angle)+ ',' + str(float(x-170)/float(460))+','+str(0.5*dist2/800) # Remove in actual test
