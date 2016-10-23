@@ -70,7 +70,8 @@ timeout_period = 0.5
 
 
 def play(state, player, action):
-    pygame.init()
+    if vis==1:
+        pygame.init()
     clock = pygame.time.Clock()
 
     if vis == 1:

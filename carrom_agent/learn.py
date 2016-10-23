@@ -15,6 +15,7 @@ import tflearn
 from one_step import simulate
 from Utils import *
 from replay_buffer import ReplayBuffer
+from my_agent import play
 
 # ==========================
 #   Training Parameters
@@ -22,7 +23,7 @@ from replay_buffer import ReplayBuffer
 # Max training steps
 MAX_EPISODES = 50000
 # Max episode length
-MAX_EP_STEPS = 1000
+MAX_EP_STEPS = 100
 # Base learning rate for the Actor network
 ACTOR_LEARNING_RATE = 0.001
 # Base learning rate for the Critic Network
@@ -64,17 +65,19 @@ def vectorize_state(state):
     i=36
     for x in state["Red_Location"]:
         ans[i]=x[0]
-        ans[i+1]=x[1]
+        ans[i+1]=x[1]  
     return ans
 class Environment(object):
 
     def __init__(self):
         self.S=INITIAL_STATE
+        print "New Episode"
     def reset(self):
         self.S=INITIAL_STATE
         return vectorize_state(self.S)
     def step(self,action):
         self.S,r=simulate(self.S,[(action[0]+1)/2,(action[1]+1)*135 - 45 ,(action[2]+1)/2])
+        print "Reward",r
         if(len(self.S["White_Locations"])==0 and len(self.S["Black_Locations"])==0 and len(self.S["Red_Location"])==0 ):
             return vectorize_state(self.S),r,True
         return vectorize_state(self.S),r,False
@@ -286,8 +289,11 @@ def train(sess, env, actor, critic):
         for j in xrange(MAX_EP_STEPS):
 
             # Added exploration noise
-            a = actor.predict(np.reshape(s, (1, 38)))
-            a= np.random.uniform(-1, 1, size=3)
+            a= np.random.uniform(-1,1,3)
+            if(a[0]+1>0.2):
+                a = actor.predict(np.reshape(s, (1, 38)))
+                a=a[0]
+
             s2, r, terminal = env.step(a)
 
             replay_buffer.add(np.reshape(s, (actor.s_dim,)), np.reshape(a, (actor.a_dim,)), r, \

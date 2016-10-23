@@ -8,7 +8,7 @@ import ast
 import numpy as np
 import argparse
 import random
-
+from one_step import simulate
 
 parser = argparse.ArgumentParser()
 
@@ -149,21 +149,37 @@ def play(S):
     list_of_x = range(170,640,10)
     x,dist2 = get_most_suitable_x(list_of_x,to_hit_list,to_hit, angle_to_hole)
     loc = (x,145)
+    if(dist(loc,to_hit)<40):
+    	if(x<590):
+    		x+=40
+    	else:
+    		x-=40
+    loc = (x,145)
     angle=math.atan2((to_hit[1]-loc[1]),(to_hit[0]-loc[0]))
     if angle < 0:
         angle = angle + 2*3.14
     angle=angle/3.14*180
     if angle>=315 and angle<=360:
         angle=angle-360
-    return str(float(x-170)/float(460))+','+str(angle)+ ','+str(0.6)
+    force=0.8*(1+0.001*sqrt(dist2))
+    if(angle<0 or angle>180):
+    	force = 0.1
+    angle1=math.atan2((hole[1]-loc[1]),(hole[0]-loc[0]))/3.14*180
+    if(abs(angle-angle1)<10):
+    	force = 0.1    
+    return str(float(x-170)/float(460))+','+str(angle)+ ','+str(force)
 def myplay(S):
 	if  len(S["White_Locations"])!=0 or len(S["Black_Locations"])!=0 or len(S["Red_Location"])!=0:
 		to_hit_list=S["Black_Locations"]+S["Red_Location"] + S["White_Locations"]
 	if len(to_hit_list) == 2 and len(S["Red_Location"])!=0 :
 		to_hit = S["Red_Location"][0]
+	if(len(to_hit_list)>4):
+		return None
 	targets=[]
 	for coin in to_hit_list:
-		for hole in holes:
+		for hole in [(755.9, 755.9), (44.1, 755.9)]:
+			if(dist(coin,hole)<45):
+				continue
 			m=(coin[1]-hole[1])/(coin[0]-hole[0])
 			c=coin[1]-m*coin[0]
 			x=(145.0-c)/m
@@ -191,9 +207,10 @@ def myplay(S):
 			idx=i
 	if(targets!=[]):
 		print targets[idx]
-		d=dist((targets[idx][2],145),targets[idx][0])+0.35*dist(targets[idx][0],targets[idx][1])
-		return str(float(targets[idx][2]-170)/float(460))+','+str(targets[idx][3])+ ','+str(0.3*(d/2800))    
+		d=dist((targets[idx][2],145),targets[idx][0])+1.05*dist(targets[idx][0],targets[idx][1])
+		return str(float(targets[idx][2]-170)/float(460))+','+str(targets[idx][3])+ ','+str(0.002*sqrt(d)*sqrt(targets[idx][4]))    
 	return None
+a_old=None
 if __name__ == "__main__":
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.connect((host, port))
@@ -211,13 +228,16 @@ if __name__ == "__main__":
 	    	a=play(S)
 	    	print "Default"
 	    if(first):
-			a="1.0, 131.7829, 0.6"
+			a="1.0, 131.7829, 0.5"
 			first=False
 				# first=False
 	            #a=str(angle)+ ',' + str(float(x-170)/float(460))+','+str(random.random()/1.25) # Remove in actual test
 	            #a=str(angle)+ ',' + str(float(x-170)/float(460))+','+str(0.5*dist2/800) # Remove in actual test
 	    try:
 	        #print a + ":::" + str(to_hit) + "+++" + str(loc)
+	        if(a_old==a):
+	        	a="2,-60,0.8"
+	        a_old=a
 	        s.send(a)
 	    except:
 	        print "Error in sending:",  a
