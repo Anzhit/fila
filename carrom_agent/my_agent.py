@@ -161,7 +161,8 @@ def play(S):
     angle=angle/3.14*180
     if angle>=315 and angle<=360:
         angle=angle-360
-    force=0.8*(1+0.001*sqrt(dist2))
+    force=0.7*(0.5+0.001*sqrt(dist2)+0.2*sqrt(len(to_hit_list)))
+    force =1
     if(angle<0 or angle>180):
     	force = 0.1
     angle1=math.atan2((hole[1]-loc[1]),(hole[0]-loc[0]))/3.14*180
