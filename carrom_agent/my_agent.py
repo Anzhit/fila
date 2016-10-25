@@ -43,7 +43,7 @@ def parse_state_message(msg):
     state = ast.literal_eval(s[0])
     return state, reward
 
-def get_coin_max_sep(coin_list) :
+def get_coin_min_sep(coin_list) :
     maxi_index = 0
     maxi_dist = 100000
     dist = 0
@@ -60,7 +60,7 @@ def get_dist(coin_list, index) :
         distance = distance + dist(coin_list[j],coin_list[index])
     return distance
 
-def find_nearest_hole(coin) :
+def best_hole(coin) :
     maxi_index = 0
     maxi_dist = 0
     distance = 0
@@ -115,7 +115,6 @@ def get_most_suitable_x(list_of_x,coin_list,to_hit, angle_to_hole) :
 
     for i in range (0,len(list_of_x)) :
         unobstructed_distance = (to_hit[0] - list_of_x[i])*(to_hit[0] - list_of_x[i]) + (to_hit[1] - 145)*(to_hit[1] - 145)
-        #angle = math.atan2((to_hit[1]-145),(to_hit[0]-list_of_x[i]))
         minx = min(list_of_x[i], to_hit[0])
         maxx = max(list_of_x[i], to_hit[0])
         miny = min(145, to_hit[1])
@@ -135,19 +134,19 @@ def get_most_suitable_x(list_of_x,coin_list,to_hit, angle_to_hole) :
 
 def play(S):
     if  len(S["White_Locations"])!=0 or len(S["Black_Locations"])!=0 or len(S["Red_Location"])!=0:
-    	to_hit_list=S["Black_Locations"]+S["Red_Location"] + S["White_Locations"]
-    if len(to_hit_list) == 2 and len(S["Red_Location"])!=0 :
+    	target_list=S["Black_Locations"]+S["Red_Location"] + S["White_Locations"]
+    if len(target_list) == 2 and len(S["Red_Location"])!=0 :
         to_hit = S["Red_Location"][0]
     else :
         try:
-            to_hit = to_hit_list[get_coin_max_sep(to_hit_list)]
+            to_hit = target_list[get_coin_min_sep(target_list)]
         except:
-            to_hit = (400,400)
-    hole = find_nearest_hole(to_hit)
+            to_hit = (100,100)
+    hole = best_hole(to_hit)
 
     angle_to_hole = math.atan2((to_hit[1]-hole[1]),(to_hit[0]-hole[0]))
     list_of_x = range(170,640,10)
-    x,dist2 = get_most_suitable_x(list_of_x,to_hit_list,to_hit, angle_to_hole)
+    x,dist2 = get_most_suitable_x(list_of_x,target_list,to_hit, angle_to_hole)
     loc = (x,145)
     if(dist(loc,to_hit)<40):
     	if(x<590):
@@ -161,23 +160,23 @@ def play(S):
     angle=angle/3.14*180
     if angle>=315 and angle<=360:
         angle=angle-360
-    force=0.7*(0.5+0.001*sqrt(dist2)+0.2*sqrt(len(to_hit_list)))
+    force=0.7*(0.5+0.001*sqrt(dist2)+0.2*sqrt(len(target_list)))
     force =1
     if(angle<0 or angle>180):
     	force = 0.1
     angle1=math.atan2((hole[1]-loc[1]),(hole[0]-loc[0]))/3.14*180
-    if(abs(angle-angle1)<10):
-    	force = 0.1    
+    # if(abs(angle-angle1)<10):
+    # 	force = 0.1    
     return str(float(x-170)/float(460))+','+str(angle)+ ','+str(force)
 def myplay(S):
 	if  len(S["White_Locations"])!=0 or len(S["Black_Locations"])!=0 or len(S["Red_Location"])!=0:
-		to_hit_list=S["Black_Locations"]+S["Red_Location"] + S["White_Locations"]
-	if len(to_hit_list) == 2 and len(S["Red_Location"])!=0 :
-		to_hit = S["Red_Location"][0]
-	if(len(to_hit_list)>4):
+		target_list=S["Black_Locations"]+S["Red_Location"] + S["White_Locations"]
+	if len(target_list) == 2 and len(S["Red_Location"])!=0 :
+		target_list = S["Red_Location"]
+	if(len(target_list)>4):
 		return None
 	targets=[]
-	for coin in to_hit_list:
+	for coin in target_list:
 		for hole in [(755.9, 755.9), (44.1, 755.9)]:
 			if(dist(coin,hole)<45):
 				continue
@@ -193,7 +192,7 @@ def myplay(S):
 			if(170<x and x<630 and ang<=225 and ang>=-45 ):
 				#find # obstructions
 				obtr=0
-				for co in to_hit_list:
+				for co in target_list:
 					if(dist((x,145),co)<35):
 						obtr=10
 					if(abs(co[1]-m*co[0]-c)/sqrt(1+m*m) <25):
@@ -216,7 +215,7 @@ if __name__ == "__main__":
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.connect((host, port))
 	first=True
-	#170:630
+
 	while 1:
 	    tm = s.recv(1024)
 	    try:
@@ -224,18 +223,14 @@ if __name__ == "__main__":
 	    except:
 	        print "Something went wrong",tm
 			
-	    a=play(S)
+	    a=myplay(S)
 	    if(a==None):
 	    	a=play(S)
 	    	print "Default"
 	    if(first):
 			a="1.0, 131.7829, 0.5"
 			first=False
-				# first=False
-	            #a=str(angle)+ ',' + str(float(x-170)/float(460))+','+str(random.random()/1.25) # Remove in actual test
-	            #a=str(angle)+ ',' + str(float(x-170)/float(460))+','+str(0.5*dist2/800) # Remove in actual test
 	    try:
-	        #print a + ":::" + str(to_hit) + "+++" + str(loc)
 	        if(a_old==a):
 	        	a="2,-60,0.8"
 	        a_old=a
