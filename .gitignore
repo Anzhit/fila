@@ -3,3 +3,4 @@ Evaluation/
 TODO.txt
 testagent/
 logs/log*
+*.DS_Store
