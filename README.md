@@ -3,7 +3,6 @@ Carrom_rl
 
 An open source Carrom Simulator interface for testing intelligent/learning agents.
 
-[![Join the chat at https://gitter.im/Carrom_rl/Lobby](https://badges.gitter.im/Carrom_rl/Lobby.svg)](https://gitter.im/Carrom_rl/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
 
@@ -198,11 +197,27 @@ python simulation.py
 
 ## What to submit?
 
+For Assignment 4:
+
 Please read Readme.txt
 
 You must write a carrom agent, which clears the single player board in <=30 turns on average. generate_stats.py will be called for >=1000 experiments. If the data is invalid, for eg: you have a connection timeout/runtime error/exceed 500 strikes, the statistics will not be counted, so make sure your agent is fully functional (in the sl2 machines) before submission. If confused, open **start_agent.py**, which has helpful built in logic to connect to the carrom server, parse the state and send an action.
 
+
+For Project, Please refer to: Project.txt
+
 ### Changes
+
+<b>Version 1.1 - 2 Player Server</b>
+
+2 Player Server is now fixed, the following changes have been made:
+
+- Fixed action related bugs
+- Striker positions are symmetric
+- added generate_statsP2.sh to evaluate player 2 server
+- made board symmetric
+
+
 <b>Version 1.0 - Initial release</b>
 
 Single player server is ready. There might be some issues with the doubles server, they will be fixed later.
