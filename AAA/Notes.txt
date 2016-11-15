@@ -1,0 +1,17 @@
+﻿Team Name - AAA
+130050016 - Aashish Rathi
+130050029 - Ankit Rathore
+13D100032 - Anchit Gupta
+
+
+Key Ideas of Our Implementation
+
+
+1. We have hard-coded the first move.
+2. We find the coin which is closest to the most number of coins(heuristic), the hole which is most suitable to pocket that coin (using distance and angle to hole) along with the most suitable location to place the striker. We take that location from which we can find an unobstructed pathway to the coin chosen and hit it with all the force we have if the coin is in front of the striker and with force = 0.1 if it is behind .
+3. If there are less than 4 coins, then if there is a direct hit possible(i.e., we’re able to strike the coin directly into a hole) than we do that with a small force(for better control) which is tuned as per the distance to hit.
+
+
+Some ideas which we tried but couldn’t give us good results:-
+1. We tried to tune the force using neural networks but realized that largest force is the best. 
+2. We also tried always hitting directly, but that performs poorly when the board is crowded.
